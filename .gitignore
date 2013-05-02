@@ -1,0 +1,8 @@
+node_modules/*
+config.json
+errors*.txt
+log*.txt
+*~
+kidozen.config
+*tgz
+*.log

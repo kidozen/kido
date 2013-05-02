@@ -1,0 +1,360 @@
+#!/usr/bin/env node
+
+
+/**
+ * module dependencies
+ */
+
+var path = require('path'),
+    fs   = require('fs'),
+    program = require('commander');
+
+/**
+ * module variables
+ */
+
+var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib'),
+    app  = require(lib),
+    home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
+    configFile = path.join(home, 'kido.config');
+
+/**
+ * init
+ */
+
+program
+    .version(require('../package.json').version)
+    .description('Kidozen platform command line tool for development.');
+
+
+/** Helper functions **/
+
+
+/**
+ * exits the process despite of any listeners being attached.
+ * @api private
+ */
+
+function exit() {
+    process.exit();
+}
+
+
+/**
+ * gets users's configuration. if the file does not exist yet
+ * creates an empty one.
+ * @api private
+ */
+
+function getConfig () {
+    if (!fs.existsSync(configFile)) {
+        fs.writeFileSync(configFile, '{"logins":{}}', 'utf8');
+    }
+    return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+}
+
+
+/**
+ * sets the config on the user's config file.
+ * @api private
+ */
+
+function setConfig ( cnf ) {
+    fs.writeFileSync(configFile, JSON.stringify(cnf, 0, 2), 'utf8');
+}
+
+
+/**
+ * sets the config to the current folder's application.
+ * @api private
+ */
+
+function setAppConfig( cnf ) {
+
+    var filePath = path.join(process.cwd(), 'kidozen.config'),
+        config   = JSON.stringify(cnf, 0, 2);
+    fs.writeFileSync(filePath, config, 'utf8');
+}
+
+
+/**
+ * get's the credentials for the specified hosting.
+ * if no hosting is provided, then it looks for the default one.
+ * @api private
+ */
+
+function getCredentials( domain ) {
+
+    var cnf = getConfig();
+
+    domain = domain || cnf.hosting;
+
+    if (!domain) {
+        console.error('no hosting selected. use `kido hosting`');
+        exit();
+    }
+
+    var credentials = cnf.logins[domain];
+
+    if (!credentials) {
+        console.error('could not find credentials. use `kido hosting`');
+        exit();
+    }
+
+    return {
+        hosting: domain,
+        user: credentials.username,
+        pass: credentials.password
+    };
+}
+
+
+/**
+ * get's the current folder's application configuration. if no file was found
+ * but a name and hosting was provided, prompt the user whehter he wants to
+ * create the file.
+ * @api
+ */
+
+function getAppConfig( name, hosting, cb ) {
+
+    var configPath = path.join(process.cwd(), 'kidozen.config'),
+        prompt = true;
+
+    if (!name) {
+        if (!fs.existsSync(configPath)) {
+            console.error('provide app name');
+            exit();
+        }
+
+        var config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+        if (!config || !config.name) {
+            console.error('provide app name');
+            exit();
+        }
+
+        //config was saved. no need to ask again.
+        prompt = false;
+        name = config.name;
+        hosting = config.hosting;
+    }
+
+    var credentials = getCredentials(hosting),
+        result = { name: name, credentials: credentials };
+
+    if (prompt) {
+        program.confirm('save app configuration to current folder? ', function ( yes ) {
+            if (yes) {
+                setAppConfig({ name: name, hosting: hosting });
+            }
+
+            cb(null, result);
+        });
+    } else {
+        cb(null, result);
+    }
+}
+
+
+/** program commands **/
+
+
+/**
+ * `kido hosting domain` - will save the credentials for the specified domain
+ * in the user's folder.
+ * @api
+ */
+
+program
+    .command('hosting <domain>')
+    .description('saves the hosting configuration')
+    .action(function( domain ) {
+
+        program.prompt('user name: ', function ( usr ) {
+
+            if (!usr) {
+                console.error('must provide a user name');
+                exit();
+            }
+
+            program.password('password: ', '*', function ( pwd ) {
+
+                if (!pwd) {
+                    console.error('must provide a password');
+                    exit();
+                }
+
+                var api = app({hosting: domain, user: usr, pass: pwd});
+                //make sure credentials are valid before we save them.
+                api.getToken(function ( err ) {
+
+                    if (err) {
+                        console.error('unable to authenticate:', err.message || err);
+                        exit();
+                    }
+
+                    console.info('');
+                    console.info('log in successfull!');
+
+                    //save credentials.
+                    var cnf = getConfig();
+                    //set default hosting.
+                    if (!cnf.hosting) cnf.hosting = domain;
+
+                    cnf.logins[domain] = {
+                        username: usr,
+                        password: pwd
+                    };
+                    //save config.
+                    setConfig(cnf);
+
+                    console.info('');
+                    console.info('hosting saved in configuration.');
+                    console.info('');
+
+                    exit();
+                });
+            });
+        }); 
+    });
+
+
+/**
+ * `kido app-list [hosting]` - will list the names of all the apps on the
+ * hosting.
+ * @api public
+ */
+
+program
+    .command('app-list [hosting]')
+    .description('list all the apps in the hosting')
+    .action(function ( domain ) {
+
+        var credentials = getCredentials(domain);
+
+        console.info('getting list of apps from: ', credentials.hosting);
+
+        app(credentials)
+            .apps(function ( err, apps ) {
+
+                if (err) {
+                    console.error( err.message || err);
+                    exit();
+                }
+
+                for(var i in apps) {
+                    console.info('- ', apps[i].name);
+                }
+            });
+    });
+
+
+/**
+ * `kido app-create <name> [hosting] - creates an app with the provided name
+ * in the specified hosting (or the default one).
+ * @api public
+ */
+
+program
+    .command('app-create <name> [hosting]')
+    .description('creates an app with <name> in the [hosting]')
+    .action(function ( name, hosting ) {
+
+        var credentials = getCredentials(hosting);
+
+        console.info('creating app ', name, ' in ', credentials.hosting);
+
+        app(credentials)
+            .createApp( name, function ( err ) {
+
+                if (err) {
+                    console.error( err );
+                    exit();
+                }
+
+                console.info('');
+                console.info('application successfully created!');
+                console.info('');
+
+                program.prompt('save app configuration to current folder? ', function ( yes ) {
+
+                    if (yes) {
+                        setAppConfig({ name: name, hosting: hosting });
+                    }
+
+                    exit();
+                });
+            });
+    });
+
+
+/**
+ * `kido app-deploy [name] [hosting] - will deploy the current folder to the
+ * app `[name]` in the hosting `[hosting]`. If no name or hosting is provided,
+ * it will look into the current folder to see if the config has been saved and
+ * use that instead. If only the name is provided, it will try to use the
+ * default hosting.
+ * @api public
+ */
+
+program
+    .command('app-deploy [name] [hosting]')
+    .description('deploy current folder to the [name] app in [hosting]')
+    .action(function ( name, hosting ) {
+        
+        getAppConfig(name, hosting, function ( err, conf ) {
+            console.info('deploying current folder to app ', conf.name, ' in ', conf.credentials.hosting);
+
+            app(conf.credentials)
+                .deployApp( conf.name, process.cwd(), function ( err ) {
+
+                    if (err) {
+                        console.error(err.toString());
+                        exit();
+                    }
+
+                    console.info('');
+                    console.info('application deployed successfully!');
+                    console.info('');
+                    exit();
+                });    
+        });
+    });
+
+
+/**
+ * `kido app-run [name] [hosting] - similar to deploy, but instead of sending
+ * the files to hosting, it opens a webserver and serves the local files instead.
+ * @api public
+ */
+
+program
+    .command('app-run [name] [hosting]')
+    .description('runs files on local folder and redirects calls to backend services')
+    .action(function ( name, hosting ) {
+
+        getAppConfig(name, hosting, function ( err, conf ) {
+            app(conf.credentials)
+                .emulate( conf.name, process.cwd(), function ( err ) {
+
+                    if (err) {
+                        console.error(err);
+                        exit();
+                    }
+
+                    console.info('');
+                    console.info('you can now open http://localhost:3000 in your browser');
+                    console.info('backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
+                    console.info('');
+                });
+        });
+    });
+
+program.parse(process.argv);
+
+if (process.argv.length === 2) {
+
+    program.help();
+
+}

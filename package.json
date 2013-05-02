@@ -1,0 +1,26 @@
+{
+  "name": "kido",
+  "description": "The KidoZen command line utility",
+  "version": "0.0.3",
+  "dependencies": {
+    "commander":"1.1.1",
+    "fstream": "~0.1.18",
+    "tar": "~0.1.13",
+    "connect": "~2.3.8",
+    "request": "~2.9.203",
+    "http-proxy": "~0.8.2",
+    "simple-errors": "*",
+    "commander": "*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*",
+    "ws": "~0.4.20"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "bin": {
+    "kido": "./bin/kido"
+  }
+}
