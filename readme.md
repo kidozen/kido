@@ -1,6 +1,7 @@
 kido - Kidozen Platform command line tool
 
 #Installation
+
 You must have node.js installed. (>=0.8.14)
 
 	npm install -g kido
@@ -28,12 +29,13 @@ You must have node.js installed. (>=0.8.14)
 #Commands
 
 ##hosting
+
 Use `kido hosting <domain>` for storing your management credentials in your profile.
 
 Example:
 
 
-	$ kido hosting mycompany.kidozen.com
+	$ kido hosting mycompany.kidocloud.com
 	username: myuser@kidozen.com
 	password: ************
 
@@ -41,6 +43,7 @@ Once you have configured your hosting in your profile, it will be stored as the 
 
 
 ##app-list
+
 Gets the list of applications in your marketplace.
 
 NOTE: this command will only work after successfully calling `kido hosting`.
@@ -53,6 +56,7 @@ Example:
 	- myapp2
 
 ##app-create
+
 Creates a new application and provisions the necessary backend services.
 
 Example:
@@ -63,6 +67,7 @@ Example:
 After successfully creating the app in the marketplace, it will prompt to see whether you want to save this config so you don't have to type the app name and hosting again (valid for the folder where the command is executed).
 
 ##app-deploy
+
 Deploys a new version of an HTML5 web application into the Kidozen hosting platform.
 
 If you saved the config when you created the app, then there's no need to specify the app name and hosting.
@@ -73,6 +78,7 @@ Example:
 	$ kido app-deploy
 
 ##app-run
+
 This command will start a webserver in `localhost:3000` that will serve the files in the current folder, and will proxy the calls to backend services to the app that was configured. This command is very usefull for developing HTML5 web applications locally without having to deploy the app all the time.
 
 Example:
@@ -81,13 +87,14 @@ Example:
 	$ kido app-run
 	
 	you can now open http://localhost:3000 in your browser
-	backend calls are being directed to https://mynewapp.mycompany.kidozen.com
+	backend calls are being directed to https://mynewapp.mycompany.kidocloud.com
 
 At this point, you can open your browser in `http://localhost:3000` and start testing your app locally.
 
 The command will stay running until you interrupt it's execution (ctrl + c).
 
 #Bugs & Support
+
 Feel free to submit any issues or feature requests in the issues tab of the github.com repository.
 
 #License (FreeBSD)
