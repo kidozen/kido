@@ -1,246 +1,245 @@
 var fs      = require('fs'),
-	path    = require('path'),
-	kido    = require('../lib/index'),
-	request = require('request'),
-	assert  = require('assert'),
-	hosting = process.env.KIDOCLI_TESTS_HOSTING,
-	user    = process.env.KIDOCLI_TESTS_USER,
-	pass    = process.env.KIDOCLI_TESTS_PASS;
+    path    = require('path'),
+    kido    = require('../lib/index'),
+    request = require('request'),
+    assert  = require('assert'),
+    hosting = process.env.KIDOCLI_TESTS_HOSTING;
+    user    = process.env.KIDOCLI_TESTS_USER;
+    pass    = process.env.KIDOCLI_TESTS_PASS;
 
 describe("kido", function () {
-	
-	describe("invalid options", function () {
 
-		it("should throw if no opts", function ( done ) {
+    describe("invalid options", function () {
 
-			try
-			{
-				kido();
-				done('did not throw');
-			}
-			catch(e)
-			{
-				done();
-			}
-		});
+        it("should throw if no opts", function ( done ) {
 
-		it("should throw if no opts.hosting", function ( done ) {
+            try
+            {
+                kido();
+                done('did not throw');
+            }
+            catch(e)
+            {
+                done();
+            }
+        });
 
-			try
-			{
-				kido({});
-				done('did not throw');
-			}
-			catch(e)
-			{
-				done();
-			}
-		});
+        it("should throw if no opts.hosting", function ( done ) {
 
-		it("should throw if no opts.user", function ( done ) {
+            try
+            {
+                kido({});
+                done('did not throw');
+            }
+            catch(e)
+            {
+                done();
+            }
+        });
 
-			try
-			{
-				kido({ hosting: hosting });
-				done('did not throw');
-			}
-			catch(e)
-			{
-				assert.ok(e);
-				assert.equal('opts.user is required', e.message);
-				done();
-			}
-		});
-		it("should throw if no opts.pass", function ( done ) {
+        it("should throw if no opts.user", function ( done ) {
 
-			try
-			{
-				kido({ hosting: hosting, user: user });
-				done('did not throw');
-			}
-			catch(e)
-			{
-				assert.ok(e);
-				assert.equal('opts.pass is required', e.message);
-				done();
-			}
-		});
+            try
+            {
+                kido({ hosting: hosting });
+                done('did not throw');
+            }
+            catch(e)
+            {
+                assert.ok(e);
+                assert.equal('opts.user is required', e.message);
+                done();
+            }
+        });
+        it("should throw if no opts.pass", function ( done ) {
 
-	});
+            try
+            {
+                kido({ hosting: hosting, user: user });
+                done('did not throw');
+            }
+            catch(e)
+            {
+                assert.ok(e);
+                assert.equal('opts.pass is required', e.message);
+                done();
+            }
+        });
 
-	describe("valid options", function () {
+    });
 
-		var config = {
-				hosting: hosting,
-				user: user,
-				pass: pass
-			},
-			api = kido(config);
+    describe("valid options", function () {
 
-		before(function ( done ) {
-			this.timeout(5000);
-			api.getToken(done);
-		});
+        var config = {
+                hosting: hosting,
+                user: user,
+                pass: pass
+            },
+            api = kido(config);
 
-		it("should return a kido instance", function () {
+        before(function ( done ) {
+            this.timeout(5000);
+            api.getToken(done);
+        });
 
-			var api = kido(config);
-			assert.ok(api);
-			assert.equal(hosting, api.hosting);
-			assert.equal(user, api.user);
-			assert.equal(pass, api.pass);
-		});
+        it("should return a kido instance", function () {
 
-		describe("kido.getToken", function () {
+            var api = kido(config);
+            assert.ok(api);
+            assert.ok(api.hosting);
+            assert.equal(user, api.user);
+            assert.equal(pass, api.pass);
+        });
 
-			it("should get a valid token", function ( done ) {
+        describe("kido.getToken", function () {
 
-				api.getToken(function ( err, token ) {
+            it("should get a valid token", function ( done ) {
 
-					assert.ok(!err);
-					assert.ok(token);
-					done();
-				});
-			});
-		});
+                api.getToken(function ( err, token ) {
 
-		describe("kido.apps", function () {
+                    assert.ok(!err);
+                    assert.ok(token);
+                    done();
+                });
+            });
+        });
 
-			it("should return list of apps", function ( done ) {
+        describe("kido.apps", function () {
 
-				api.apps(function ( err, apps ) {
+            it("should return list of apps", function ( done ) {
 
-					assert.ok(!err);
-					assert.ok(apps);
-					assert.ok(Array.isArray(apps));
-					done();
-				});
-			});
+                api.apps(function ( err, apps ) {
 
-			it("should get application details", function ( done ) {
+                    assert.ok(!err);
+                    assert.ok(apps);
+                    assert.ok(Array.isArray(apps));
+                    done();
+                });
+            });
 
-				this.timeout(10000);
+            it("should get application details", function ( done ) {
 
-				api.apps(function ( err, apps ) {
+                this.timeout(10000);
 
-					assert.ok(!err, err);
-					assert.ok(apps.length > 0, 'there must be at least one app');
+                api.apps(function ( err, apps ) {
 
-					var name = apps[0].name;
-					assert.ok(name);
+                    assert.ok(!err, err);
+                    assert.ok(apps.length > 0, 'there must be at least one app');
 
-					api.app(name, function ( err, app ) {
+                    var name = apps[0].name;
+                    assert.ok(name);
 
-						assert.ok(!err);
-						assert.ok(app);
-						assert.equal(name, app.name);
-						done();
-					});
-				});
-			});
+                    api.app(name, function ( err, app ) {
 
-			it("should return null when app does not exist", function ( done ) {
+                        assert.ok(!err);
+                        assert.ok(app);
+                        assert.equal(name, app.name);
+                        done();
+                    });
+                });
+            });
 
-				api.app('non-existing-app', function ( err, app ) {
+            it("should return null when app does not exist", function ( done ) {
 
-					assert.ok(!err);
-					assert.ok(!app);
-					done();
-				});
-			});
+                api.app('non-existing-app', function ( err, app ) {
 
-			it("should create an app and then delete it", function ( done ) {
+                    assert.ok(!err);
+                    assert.ok(!app);
+                    done();
+                });
+            });
 
-				this.timeout(20 * 1000);
+            it("should create an app and then delete it", function ( done ) {
 
-				//random app name.
-				var appname = 'app' + Math.random().toString(36).substring(9);
+                this.timeout(20 * 1000);
 
-				api.createApp(appname, function ( err ) {
-					
-					assert.ok(!err);
+                //random app name.
+                var appname = 'app' + Math.random().toString(36).substring(9);
 
-					api.app(appname, function ( err, app ) {
+                api.createApp(appname, function ( err ) {
 
-						assert.ok(!err);
-						assert.ok(app);
-						assert.equal(appname, app.name);
+                    assert.ok(!err);
 
-						api.deleteApp(app._id, function ( err ) {
+                    api.app(appname, function ( err, app ) {
 
-							assert.ok(!err);
-							done();
-						});
-					});
-				});
-			});
+                        assert.ok(!err);
+                        assert.ok(app);
+                        assert.equal(appname, app.name);
 
-			it("should deploy an app", function ( done ) {
+                        api.deleteApp(app._id, function ( err ) {
 
-				this.timeout(20 * 1000);
+                            assert.ok(!err);
+                            done();
+                        });
+                    });
+                });
+            });
 
-				//random app name.
-				var appname = 'app' + Math.random().toString(36).substring(9);
+            it("should deploy an app", function ( done ) {
 
-				api.createApp(appname, function ( err ) {
-					
-					assert.ok(!err);
+                this.timeout(20 * 1000);
 
-					console.log('app ' + appname + ' created.');
+                //random app name.
+                var appname = 'app' + Math.random().toString(36).substring(9);
 
-					setTimeout(function () {
-						var folder = path.join(__dirname, './app');
-						api.deployApp(appname, folder, function ( err ) {
+                api.createApp(appname, function ( err ) {
 
-							console.log(err);
-							assert.ok(!err);
+                    assert.ok(!err);
 
-							done();
-						});	
-					}, 4000);
-				});
-			});
+                    console.log('app ' + appname + ' created.');
 
-			it("should run emulator for an app", function ( done ) {
+                    setTimeout(function () {
+                        var folder = path.join(__dirname, './app');
+                        api.deployApp(appname, folder, function ( err ) {
 
-				this.timeout(20 * 1000);
+                            console.log(err);
+                            assert.ok(!err);
 
-				//random app name.
-				var appname = 'app' + Math.random().toString(36).substring(9);
+                            done();
+                        });
+                    }, 4000);
+                });
+            });
 
-				api.createApp(appname, function ( err ) {
-					
-					assert.ok(!err);
+            it("should run emulator for an app", function ( done ) {
 
-					console.log('app ' + appname + ' created.');
+                this.timeout(20 * 1000);
 
-					setTimeout(function () {
-						var folder = path.join(__dirname, './app');
-						api.emulate(appname, folder, function ( err ) {
+                //random app name.
+                var appname = 'app' + Math.random().toString(36).substring(9);
 
-							assert.ok(!err);
+                api.createApp(appname, function ( err ) {
 
-							//test local files.
-							request('http://localhost:3000', function ( err, res, body ) {
+                    assert.ok(!err);
 
-								assert.ok(!err);
-								assert.equal(200, res.statusCode);
-								assert.ok(body.indexOf('Hello') > -1);
-								//test remote services.
-								request('http://localhost:3000/storage/local', function ( err, res, body ) {
+                    console.log('app ' + appname + ' created.');
+
+                    setTimeout(function () {
+                        var folder = path.join(__dirname, './app');
+                        api.emulate(appname, folder, function ( err ) {
+
+                            assert.ok(!err);
+
+                            //test local files.
+                            request('http://localhost:3000', function ( err, res, body ) {
+
+                                assert.ok(!err);
+                                assert.equal(200, res.statusCode);
+                                assert.ok(body.indexOf('Hello') > -1);
+                                //test remote services.
+                                request('http://localhost:3000/storage/local', function ( err, res, body ) {
 
 
-									assert.ok(!err);
-									assert.equal(200, res.statusCode);
-									assert.equal('[]', body);
-									done();
-								});
-							});
-						});	
-					}, 4000);
-				});
-			});
-		});
-	});
-	
+                                    assert.ok(!err);
+                                    assert.equal(200, res.statusCode);
+                                    assert.equal('[]', body);
+                                    done();
+                                });
+                            });
+                        });
+                    }, 4000);
+                });
+            });
+        });
+    });
 });
