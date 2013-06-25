@@ -1,7 +1,7 @@
 {
   "name": "kido",
   "description": "The KidoZen command line utility",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dependencies": {
     "commander":"1.1.1",
     "fstream": "~0.1.18",
@@ -10,7 +10,8 @@
     "request": "~2.9.203",
     "http-proxy": "~0.8.2",
     "simple-errors": "0.0.4",
-    "commander": "1.1.1"
+    "commander": "1.1.1",
+    "cdproxy": "0.0.1"
   },
   "devDependencies": {
     "mocha": "*",
