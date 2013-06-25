@@ -11,7 +11,7 @@
     "http-proxy": "~0.8.2",
     "simple-errors": "0.0.4",
     "commander": "1.1.1",
-    "cdproxy": "0.0.1"
+    "cdproxy": "0.0.2"
   },
   "devDependencies": {
     "mocha": "*",
