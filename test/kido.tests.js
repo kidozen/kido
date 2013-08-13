@@ -73,9 +73,10 @@ describe("kido", function () {
         var config = {
                 hosting: hosting,
                 user: user,
-                pass: pass
-            },
-            api = kido(config);
+                pass: pass,
+                kidoIgnore: ['.foo']
+            };
+        var api = kido(config);
 
         before(function ( done ) {
             this.timeout(5000);
@@ -83,8 +84,6 @@ describe("kido", function () {
         });
 
         it("should return a kido instance", function () {
-
-            var api = kido(config);
             assert.ok(api);
             assert.ok(api.hosting);
             assert.equal(user, api.user);
@@ -94,9 +93,7 @@ describe("kido", function () {
         describe("kido.getToken", function () {
 
             it("should get a valid token", function ( done ) {
-
                 api.getToken(function ( err, token ) {
-
                     assert.ok(!err);
                     assert.ok(token);
                     done();
@@ -107,9 +104,7 @@ describe("kido", function () {
         describe("kido.apps", function () {
 
             it("should return list of apps", function ( done ) {
-
                 api.apps(function ( err, apps ) {
-
                     assert.ok(!err);
                     assert.ok(apps);
                     assert.ok(Array.isArray(apps));
@@ -118,9 +113,7 @@ describe("kido", function () {
             });
 
             it("should get application details", function ( done ) {
-
                 this.timeout(10000);
-
                 api.apps(function ( err, apps ) {
 
                     assert.ok(!err, err);
@@ -130,7 +123,6 @@ describe("kido", function () {
                     assert.ok(name);
 
                     api.app(name, function ( err, app ) {
-
                         assert.ok(!err);
                         assert.ok(app);
                         assert.equal(name, app.name);
@@ -140,9 +132,7 @@ describe("kido", function () {
             });
 
             it("should return null when app does not exist", function ( done ) {
-
                 api.app('non-existing-app', function ( err, app ) {
-
                     assert.ok(!err);
                     assert.ok(!app);
                     done();
@@ -150,16 +140,13 @@ describe("kido", function () {
             });
 
             it("should create an app and then delete it", function ( done ) {
-
                 this.timeout(20 * 1000);
-
                 //random app name.
                 var appname = 'app' + Math.random().toString(36).substring(9);
 
                 api.createApp(appname, function ( err ) {
 
                     assert.ok(!err);
-
                     api.app(appname, function ( err, app ) {
 
                         assert.ok(!err);
@@ -167,7 +154,6 @@ describe("kido", function () {
                         assert.equal(appname, app.name);
 
                         api.deleteApp(app._id, function ( err ) {
-
                             assert.ok(!err);
                             done();
                         });
@@ -175,26 +161,27 @@ describe("kido", function () {
                 });
             });
 
-            it("should deploy an app", function ( done ) {
-
+            it("should deploy an app, and ignore kidoIgnore files", function ( done ) {
                 this.timeout(20 * 1000);
-
                 //random app name.
                 var appname = 'app' + Math.random().toString(36).substring(9);
 
                 api.createApp(appname, function ( err ) {
-
                     assert.ok(!err);
-
                     console.log('app ' + appname + ' created.');
-
                     setTimeout(function () {
                         var folder = path.join(__dirname, './app');
+
+                        //make sure the .foo file is skipped
+                        var skipped = false;
+                        api.on('skipped', function (item) {
+                            skipped = item === '.foo';
+                        });
+
                         api.deployApp(appname, folder, function ( err ) {
-
                             console.log(err);
+                            assert.ok(skipped, 'file was not ignored');
                             assert.ok(!err);
-
                             done();
                         });
                     }, 4000);
@@ -202,34 +189,25 @@ describe("kido", function () {
             });
 
             it("should run emulator for an app", function ( done ) {
-
                 this.timeout(20 * 1000);
-
                 //random app name.
                 var appname = 'app' + Math.random().toString(36).substring(9);
 
                 api.createApp(appname, function ( err ) {
-
                     assert.ok(!err);
-
                     console.log('app ' + appname + ' created.');
 
                     setTimeout(function () {
                         var folder = path.join(__dirname, './app');
                         api.emulate(appname, folder, function ( err ) {
-
                             assert.ok(!err);
-
                             //test local files.
                             request('http://localhost:3000', function ( err, res, body ) {
-
                                 assert.ok(!err);
                                 assert.equal(200, res.statusCode);
                                 assert.ok(body.indexOf('Hello') > -1);
                                 //test remote services.
                                 request('http://localhost:3000/storage/local', function ( err, res, body ) {
-
-
                                     assert.ok(!err);
                                     assert.equal(200, res.statusCode);
                                     assert.equal('[]', body);
