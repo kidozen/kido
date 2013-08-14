@@ -302,13 +302,19 @@ program
     .command('app-deploy [name] [hosting]')
     .description('deploy current folder to the [name] app in [hosting]')
     .action(function ( name, hosting ) {
-        
         getAppConfig(name, hosting, function ( err, conf ) {
             console.info('deploying current folder to app ', conf.name, ' in ', conf.credentials.hosting);
-
-            app(conf.credentials)
-                .deployApp( conf.name, process.cwd(), function ( err ) {
-
+            var options = conf.credentials;
+            //read the .kidoignore file
+            if(fs.exists('.kidoignore')) {
+                var ignore = fs.readFileSync('.kidoignore') || "";
+                options.kidoIgnore = ignore.split('\n');
+            }
+            var kido = app(options);
+            kido.on('skipped', function (item) {
+                console.info("Skipping file: " + item);
+            });
+            kido.deployApp( conf.name, process.cwd(), function ( err ) {
                     if (err) {
                         console.error(err.toString());
                         exit();
