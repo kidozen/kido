@@ -1,14 +1,14 @@
 {
   "name": "kido",
   "description": "The KidoZen command line utility",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "dependencies": {
     "commander":"1.1.1",
     "fstream": "~0.1.18",
     "tar": "~0.1.13",
     "connect": "~2.3.8",
-    "request": "~2.9.203",
-    "http-proxy": "~0.8.2",
+    "request": "2 >=2.25.0",
+    "http-proxy": "0.10.3",
     "simple-errors": "0.0.4",
     "commander": "1.1.1",
     "cdproxy": "0.0.2"
