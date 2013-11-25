@@ -7,7 +7,7 @@
     "fstream": "~0.1.18",
     "tar": "~0.1.13",
     "connect": "~2.3.8",
-    "request": "~2.9.203",
+    "request": "2 >=2.25.0",
     "http-proxy": "~0.8.2",
     "simple-errors": "0.0.4",
     "commander": "1.1.1",
