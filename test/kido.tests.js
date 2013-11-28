@@ -3,8 +3,8 @@ var fs      = require('fs'),
     kido    = require('../lib/index'),
     request = require('request'),
     assert  = require('assert'),
-    hosting = process.env.KIDOCLI_TESTS_HOSTING;
-    user    = process.env.KIDOCLI_TESTS_USER;
+    hosting = process.env.KIDOCLI_TESTS_HOSTING,
+    user    = process.env.KIDOCLI_TESTS_USER,
     pass    = process.env.KIDOCLI_TESTS_PASS;
 
 describe("kido", function () {
@@ -51,6 +51,7 @@ describe("kido", function () {
                 done();
             }
         });
+
         it("should throw if no opts.pass", function ( done ) {
 
             try
@@ -76,10 +77,11 @@ describe("kido", function () {
                 pass: pass,
                 kidoIgnore: ['.foo']
             };
+
         var api = kido(config);
 
         before(function ( done ) {
-            this.timeout(5000);
+            this.timeout(200 * 1000);
             api.getToken(done);
         });
 
@@ -102,7 +104,7 @@ describe("kido", function () {
         });
 
         describe("kido.apps", function () {
-
+            this.timeout(20 * 1000);
             it("should return list of apps", function ( done ) {
                 api.apps(function ( err, apps ) {
                     assert.ok(!err);
@@ -132,6 +134,7 @@ describe("kido", function () {
             });
 
             it("should return null when app does not exist", function ( done ) {
+                this.timeout(20 * 1000);
                 api.app('non-existing-app', function ( err, app ) {
                     assert.ok(!err);
                     assert.ok(!app);
@@ -162,29 +165,31 @@ describe("kido", function () {
             });
 
             it("should deploy an app, and ignore kidoIgnore files", function ( done ) {
-                this.timeout(20 * 1000);
-                //random app name.
+                this.timeout(200 * 1000);
+                // random app name.
                 var appname = 'app' + Math.random().toString(36).substring(9);
 
                 api.createApp(appname, function ( err ) {
                     assert.ok(!err);
-                    console.log('app ' + appname + ' created.');
+
                     setTimeout(function () {
                         var folder = path.join(__dirname, './app');
 
-                        //make sure the .foo file is skipped
+                        // make sure the .foo file is skipped
                         var skipped = false;
                         api.on('skipped', function (item) {
                             skipped = item === '.foo';
                         });
 
                         api.deployApp(appname, folder, function ( err ) {
-                            console.log(err);
+
+                            
                             assert.ok(skipped, 'file was not ignored');
                             assert.ok(!err);
+
                             done();
                         });
-                    }, 4000);
+                    }, 5000);
                 });
             });
 
@@ -195,7 +200,6 @@ describe("kido", function () {
 
                 api.createApp(appname, function ( err ) {
                     assert.ok(!err);
-                    console.log('app ' + appname + ' created.');
 
                     setTimeout(function () {
                         var folder = path.join(__dirname, './app');
