@@ -357,6 +357,12 @@ program
         });
     });
 
+program
+  .command('*')
+  .action(function(){
+    program.help();
+  });
+
 program.parse(process.argv);
 
 if (process.argv.length === 2) {
