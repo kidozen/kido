@@ -166,8 +166,11 @@
 
 function chooseIp(api, cb) {
     api.getIdentityProviders(function (err, ipList) {
-        if (err) {
-            cb('Unable to authenticate: ' + (err.message || err));
+        if (err || !ipList) {
+
+            var message = err ? err.message : 'Couldn\'t find any identity provider.';
+
+            cb('Unable to authenticate: ' + message);
             return;
         }
 

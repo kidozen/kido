@@ -4,9 +4,9 @@ var fs      = require('fs'),
     request = require('request'),
     assert  = require('assert'),
     nock    = require('nock'),
-    hosting = 'contoso.local.kidozen.com', //process.env.KIDOCLI_TESTS_HOSTING,
-    user    = 'contoso@kidozen.com', //process.env.KIDOCLI_TESTS_USER,
-    pass    = 'pass'; //process.env.KIDOCLI_TESTS_PASS;
+    hosting = process.env.KIDOCLI_TESTS_HOSTING,
+    user    = process.env.KIDOCLI_TESTS_USER,
+    pass    = process.env.KIDOCLI_TESTS_PASS;
 
 describe("kido", function () {
 
