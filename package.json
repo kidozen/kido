@@ -1,7 +1,7 @@
 {
   "name": "kido",
   "description": "The KidoZen command line utility",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "dependencies": {
     "commander":"1.1.1",
     "fstream": "~0.1.18",
