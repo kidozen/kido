@@ -17,7 +17,8 @@
   "devDependencies": {
     "mocha": "*",
     "should": "*",
-    "ws": "~0.4.20"
+    "ws": "~0.4.20",
+    "nock": "0.27.2"
   },
   "scripts": {
     "test": "mocha"
