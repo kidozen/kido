@@ -255,131 +255,126 @@ describe("kido", function () {
                     getNock.done();
                     done();
                 });
-
             })
         });
 
+        
 
-        // describe("kido.apps", function () {
-        //     this.timeout(20 * 1000);
-        //     it("should return list of apps", function ( done ) {
-        //         api.apps(function ( err, apps ) {
-        //             assert.ok(!err);
-        //             assert.ok(apps);
-        //             assert.ok(Array.isArray(apps));
-        //             done();
-        //         });
-        //     });
+        describe("kido.apps", function () {
 
-        //     it("should get application details", function ( done ) {
-        //         this.timeout(10000);
-        //         api.apps(function ( err, apps ) {
+            var credentials = {
+                "username": user,
+                "password": pass,
+                "ip": {
+                    "name": "Kidozen",
+                    "activeEndpoint": "https://identity.kidozen.com/wrapv0.9",
+                    "protocol": "wrapv0.9"
+                }
+            }
 
-        //             assert.ok(!err, err);
-        //             assert.ok(apps.length > 0, 'there must be at least one app');
+            this.timeout(20 * 1000);
 
-        //             var name = apps[0].name;
-        //             assert.ok(name);
+            it("should return list of apps", function ( done ) {
 
-        //             api.app(name, function ( err, app ) {
-        //                 assert.ok(!err);
-        //                 assert.ok(app);
-        //                 assert.equal(name, app.name);
-        //                 done();
-        //             });
-        //         });
-        //     });
+                var api = kido(hosting)
 
-        //     it("should return null when app does not exist", function ( done ) {
-        //         this.timeout(20 * 1000);
-        //         api.app('non-existing-app', function ( err, app ) {
-        //             assert.ok(!err);
-        //             assert.ok(!app);
-        //             done();
-        //         });
-        //     });
+                api.apps(credentials, function ( err, apps ) {
+                    assert.ok(!err);
+                    assert.ok(apps);
+                    assert.ok(Array.isArray(apps));
+                    done();
+                });
+            });
 
-        //     it("should create an app and then delete it", function ( done ) {
-        //         this.timeout(20 * 1000);
-        //         //random app name.
-        //         var appname = 'app' + Math.random().toString(36).substring(9);
+            it("should get application details", function ( done ) {
 
-        //         api.createApp(appname, function ( err ) {
+                var api = kido(hosting)
 
-        //             assert.ok(!err);
-        //             api.app(appname, function ( err, app ) {
+                this.timeout(10000);
+                api.apps(credentials, function ( err, apps ) {
 
-        //                 assert.ok(!err);
-        //                 assert.ok(app);
-        //                 assert.equal(appname, app.name);
+                    assert.ok(!err, err);
+                    assert.ok(apps.length > 0, 'there must be at least one app');
 
-        //                 api.deleteApp(app._id, function ( err ) {
-        //                     assert.ok(!err);
-        //                     done();
-        //                 });
-        //             });
-        //         });
-        //     });
+                    var name = apps[0].name;
+                    assert.ok(name);
 
-        //     it("should deploy an app, and ignore kidoIgnore files", function ( done ) {
-        //         this.timeout(200 * 1000);
-        //         // random app name.
-        //         var appname = 'app' + Math.random().toString(36).substring(9);
+                    api.app(name, function ( err, app ) {
+                        assert.ok(!err);
+                        assert.ok(app);
+                        assert.equal(name, app.name);
+                        done();
+                    });
+                });
+            });
 
-        //         api.createApp(appname, function ( err ) {
-        //             assert.ok(!err);
+            it("Should deploy an app, and ignore kidoIgnore files", function ( done ) {
+                var api = kido({
+                    hosting: hosting,
+                    kidoIgnore: ['.foo']
+                });
 
-        //             setTimeout(function () {
-        //                 var folder = path.join(__dirname, './app');
+                this.timeout(200 * 1000);
+                // random app name.
+                var appname = 'app' + Math.random().toString(36).substring(9);
 
-        //                 // make sure the .foo file is skipped
-        //                 var skipped = false;
-        //                 api.on('skipped', function (item) {
-        //                     skipped = item === '.foo';
-        //                 });
+                api.createApp(credentials, appname, function ( err ) {
+                    assert.ok(!err);
 
-        //                 api.deployApp(appname, folder, function ( err ) {
+                    setTimeout(function () {
+                        var folder = path.join(__dirname, './app');
+
+                        // make sure the .foo file is skipped
+                        var skipped = false;
+                        api.on('skipped', function (item) {
+                            skipped = item === '.foo';
+                        });
+
+                        api.deployApp(credentials, appname, folder, function ( err ) {
 
                             
-        //                     assert.ok(skipped, 'file was not ignored');
-        //                     assert.ok(!err);
+                            assert.ok(skipped, 'file was not ignored');
+                            assert.ok(!err);
 
-        //                     done();
-        //                 });
-        //             }, 5000);
-        //         });
-        //     });
+                            done();
+                        });
+                    }, 5000);
+                });
+            });
 
-        //     it("should run emulator for an app", function ( done ) {
-        //         this.timeout(20 * 1000);
-        //         //random app name.
-        //         var appname = 'app' + Math.random().toString(36).substring(9);
+            it("Should run emulator for an app", function ( done ) {
 
-        //         api.createApp(appname, function ( err ) {
-        //             assert.ok(!err);
+                var api = kido(hosting);
 
-        //             setTimeout(function () {
-        //                 var folder = path.join(__dirname, './app');
-        //                 api.emulate(appname, folder, function ( err ) {
-        //                     assert.ok(!err);
-        //                     //test local files.
-        //                     request('http://localhost:3000', function ( err, res, body ) {
-        //                         assert.ok(!err);
-        //                         assert.equal(200, res.statusCode);
-        //                         assert.ok(body.indexOf('Hello') > -1);
-        //                         //test remote services.
-        //                         request('http://localhost:3000/storage/local', function ( err, res, body ) {
-        //                             assert.ok(!err);
-        //                             assert.equal(200, res.statusCode);
-        //                             assert.equal('[]', body);
-        //                             done();
-        //                         });
-        //                     });
-        //                 });
-        //             }, 4000);
-        //         });
-        //     });
-        // });
+                this.timeout(200 * 1000);
+                //random app name.
+                var appname = 'app' + Math.random().toString(36).substring(9);
+
+                api.createApp(credentials, appname, function ( err ) {
+                    assert.ok(!err);
+
+                    setTimeout(function () {
+                        var folder = path.join(__dirname, './app');
+                        api.emulate(credentials, appname, folder, function ( err ) {
+                            assert.ok(!err);
+                            //test local files.
+                            request('http://localhost:3000', function ( err, res, body ) {
+                                assert.ok(!err);
+                                assert.equal(200, res.statusCode);
+                                assert.ok(body.indexOf('Hello') > -1);
+                                //test remote services.
+                                request('http://localhost:3000/storage/local', function ( err, res, body ) {
+                                    assert.ok(!err);
+                                    assert.equal(200, res.statusCode);
+                                    assert.equal('[]', body);
+                                    done();
+                                });
+                            });
+                        });
+                    }, 4000);
+                });
+            });
+        });
     });
 
 });
