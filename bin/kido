@@ -5,29 +5,30 @@
  * module dependencies
  */
 
-var path = require('path'),
-    fs   = require('fs'),
-    program = require('commander');
+ var path = require('path'),
+ fs   = require('fs'),
+ program = require('commander'),
+ colors = require('colors');
 
 /**
  * module variables
  */
 
-var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib'),
-    app  = require(lib),
-    home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
-    configFile = path.join(home, 'kido.config');
+ var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib'),
+ app  = require(lib),
+ home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
+ configFile = path.join(home, 'kido.config');
 
 /**
  * init
  */
 
-program
-    .version(require('../package.json').version)
-    .description('Kidozen platform command line tool for development.');
+ program
+ .version(require('../package.json').version)
+ .description('Kidozen platform command line tool for development.');
 
 
-/** Helper functions **/
+ /** Helper functions **/
 
 
 /**
@@ -35,7 +36,7 @@ program
  * @api private
  */
 
-function exit() {
+ function exit() {
     process.exit();
 }
 
@@ -46,7 +47,7 @@ function exit() {
  * @api private
  */
 
-function getConfig () {
+ function getConfig () {
     if (!fs.existsSync(configFile)) {
         fs.writeFileSync(configFile, '{"logins":{}}', 'utf8');
     }
@@ -59,7 +60,7 @@ function getConfig () {
  * @api private
  */
 
-function setConfig ( cnf ) {
+ function setConfig ( cnf ) {
     fs.writeFileSync(configFile, JSON.stringify(cnf, 0, 2), 'utf8');
 }
 
@@ -69,10 +70,10 @@ function setConfig ( cnf ) {
  * @api private
  */
 
-function setAppConfig( cnf ) {
+ function setAppConfig( cnf ) {
 
     var filePath = path.join(process.cwd(), 'kidozen.config'),
-        config   = JSON.stringify(cnf, 0, 2);
+    config   = JSON.stringify(cnf, 0, 2);
     fs.writeFileSync(filePath, config, 'utf8');
 }
 
@@ -82,30 +83,37 @@ function setAppConfig( cnf ) {
  * if no hosting is provided, then it looks for the default one.
  * @api private
  */
-
-function getCredentials( domain ) {
+ function getCredentials(domain) {
 
     var cnf = getConfig();
 
     domain = domain || cnf.hosting;
 
     if (!domain) {
-        console.error('no hosting selected. use `kido hosting`');
+        showError('No hosting selected. use `kido hosting`');
         exit();
     }
 
     var credentials = cnf.logins[domain];
 
     if (!credentials) {
-        console.error('could not find credentials. use `kido hosting`');
+        showError('Could not find credentials. use `kido hosting`');
         exit();
     }
 
     return {
         hosting: domain,
-        user: credentials.username,
-        pass: credentials.password
+        username: credentials.username,
+        password: credentials.password,
+        ip: credentials.ip
     };
+}
+
+/**
+ * Unified error display method.
+ **/
+ function showError(message) {
+    console.log('Error! '.red + message);
 }
 
 
@@ -116,10 +124,10 @@ function getCredentials( domain ) {
  * @api
  */
 
-function getAppConfig( name, hosting, cb ) {
+ function getAppConfig( name, hosting, cb ) {
 
     var configPath = path.join(process.cwd(), 'kidozen.config'),
-        prompt = true;
+    prompt = true;
 
     if (!name) {
         if (!fs.existsSync(configPath)) {
@@ -141,10 +149,10 @@ function getAppConfig( name, hosting, cb ) {
     }
 
     var credentials = getCredentials(hosting),
-        result = { name: name, credentials: credentials };
+    result = { name: name, credentials: credentials };
 
     if (prompt) {
-        program.confirm('save app configuration to current folder? ', function ( yes ) {
+        program.confirm('Save app configuration to current folder? ', function ( yes ) {
             if (yes) {
                 setAppConfig({ name: name, hosting: hosting });
             }
@@ -156,6 +164,45 @@ function getAppConfig( name, hosting, cb ) {
     }
 }
 
+function chooseIp(api, cb) {
+    api.getIdentityProviders(function (err, ipList) {
+        if (err) {
+            cb('Unable to authenticate: ' + (err.message || err));
+            return;
+        }
+
+        if (ipList.length == 1) {
+            cb(null, ipList[0]);
+            return;
+        };
+
+        console.log('Choose your identity provider'.cyan);
+
+        program.choose(ipList.map(function(e) { return e.name }), function(i) {
+            cb(null, ipList[i]);
+        });
+    });
+}
+
+function enterCredentials(cb) {
+    program.prompt('user name: ', function ( usr ) {
+
+        if (!usr) {
+            cb('You must provide a user name');
+            exit();
+        }
+
+        program.password('password: ', '*', function (pwd) {
+
+            if (!pwd) {
+                cb('You must provide a password');
+                exit();
+            }
+
+            cb(null, { username: usr, password: pwd });
+        })
+    });
+}
 
 /** program commands **/
 
@@ -166,87 +213,87 @@ function getAppConfig( name, hosting, cb ) {
  * @api
  */
 
-program
-    .command('hosting <domain>')
-    .description('saves the hosting configuration')
-    .action(function( domain ) {
+ program
+ .command('hosting <domain>')
+ .description('Saves the hosting configuration')
+ .action(function( domain ) {
 
-        program.prompt('user name: ', function ( usr ) {
+    var api = app(domain);
 
-            if (!usr) {
-                console.error('must provide a user name');
-                exit();
+    chooseIp(api, function(err, ip) {
+        if (err) { 
+            showError(err); 
+            exit(); 
+        }
+
+        enterCredentials(function(err, credentials) {
+            if (err) { 
+                showError(err); 
+                exit(); 
             }
 
-            program.password('password: ', '*', function ( pwd ) {
+            credentials.ip = ip;
 
-                if (!pwd) {
-                    console.error('must provide a password');
-                    exit();
+            api.login(credentials, function(err) {
+                if (err) { 
+                    showError(err); 
+                    exit(); 
                 }
 
-                var api = app({hosting: domain, user: usr, pass: pwd});
-                //make sure credentials are valid before we save them.
-                api.getToken(function ( err ) {
+                console.info('');
+                console.info('Login successfull!'.green);
+  
+                //save credentials.
+                var cnf = getConfig();
 
-                    if (err) {
-                        console.error('unable to authenticate:', err.message || err);
-                        exit();
-                    }
+                //set default hosting.
+                if (!cnf.hosting) {
+                    cnf.hosting = domain;
+                }
 
-                    console.info('');
-                    console.info('log in successfull!');
+                cnf.logins[domain] = credentials;
 
-                    //save credentials.
-                    var cnf = getConfig();
-                    //set default hosting.
-                    if (!cnf.hosting) cnf.hosting = domain;
+                //save config.
+                setConfig(cnf);
 
-                    cnf.logins[domain] = {
-                        username: usr,
-                        password: pwd
-                    };
-                    //save config.
-                    setConfig(cnf);
+                console.info('');
+                console.info('Hosting saved in configuration.');
+                console.info('');
 
-                    console.info('');
-                    console.info('hosting saved in configuration.');
-                    console.info('');
-
-                    exit();
-                });
+                exit();
             });
-        }); 
+        })
     });
+});
 
 
-/**
- * `kido app-list [hosting]` - will list the names of all the apps on the
- * hosting.
- * @api public
- */
+// /**
+//  * `kido app-list [hosting]` - will list the names of all the apps on the
+//  * hosting.
+//  * @api public
+//  */
 
 program
     .command('app-list [hosting]')
-    .description('list all the apps in the hosting')
+    .description('List all the apps in the hosting')
     .action(function ( domain ) {
 
         var credentials = getCredentials(domain);
 
-        console.info('getting list of apps from: ', credentials.hosting);
+        console.info('Getting list of apps from: ', credentials.hosting);
 
-        app(credentials)
-            .apps(function ( err, apps ) {
+        var api = app(credentials.hosting);
 
-                if (err) {
-                    console.error( err.message || err);
-                    exit();
-                }
+        api.apps(credentials, function ( err, apps ) {
+            if (err) {
+                showError(err.message || err);
+                exit();
+            }
 
-                for(var i in apps) {
-                    console.info('- ', apps[i].name);
-                }
-            });
+            for(var i in apps) {
+                console.info('- ', apps[i].name);
+            }
+        });
     });
 
 
@@ -258,26 +305,27 @@ program
 
 program
     .command('app-create <name> [hosting]')
-    .description('creates an app with <name> in the [hosting]')
-    .action(function ( name, hosting ) {
+    .description('Creates an app with <name> in the [hosting]')
+    .action(function (name, hosting) {
 
         var credentials = getCredentials(hosting);
 
-        console.info('creating app ', name, ' in ', credentials.hosting);
+        console.info('Creating app ', name.cyan, ' in ', credentials.hosting.cyan);
 
-        app(credentials)
-            .createApp( name, function ( err ) {
+        var api = app(credentials.hosting);
+
+        api.createApp(credentials, name, function (err) {
 
                 if (err) {
-                    console.error( err );
+                    showError(err.message || err);
                     exit();
                 }
 
                 console.info('');
-                console.info('application successfully created!');
+                console.info('Application successfully created!'.green);
                 console.info('');
 
-                program.prompt('save app configuration to current folder? ', function ( yes ) {
+                program.prompt('Save app configuration to current folder? ', function ( yes ) {
 
                     if (yes) {
                         setAppConfig({ name: name, hosting: hosting });
@@ -289,7 +337,7 @@ program
     });
 
 
-/**
+ /**
  * `kido app-deploy [name] [hosting] - will deploy the current folder to the
  * app `[name]` in the hosting `[hosting]`. If no name or hosting is provided,
  * it will look into the current folder to see if the config has been saved and
@@ -300,31 +348,37 @@ program
 
 program
     .command('app-deploy [name] [hosting]')
-    .description('deploy current folder to the [name] app in [hosting]')
-    .action(function ( name, hosting ) {
-        getAppConfig(name, hosting, function ( err, conf ) {
-            console.info('deploying current folder to app ', conf.name, ' in ', conf.credentials.hosting);
-            var options = conf.credentials;
-            //read the .kidoignore file
-            if(fs.exists('.kidoignore')) {
+    .description('Deploy current folder to the [name] app in [hosting]')
+    .action(function (name, hosting) {
+
+        getAppConfig(name, hosting, function(err, conf) {
+
+            console.info('Deploying current folder to app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
+
+            var options = { hosting: conf.credentials.hosting };
+            
+            if (fs.exists('.kidoignore')) {
                 var ignore = fs.readFileSync('.kidoignore') || "";
                 options.kidoIgnore = ignore.split('\n');
             }
-            var kido = app(options);
-            kido.on('skipped', function (item) {
+            
+            var api = app(options);
+            
+            api.on('skipped', function (item) {
                 console.info("Skipping file: " + item);
             });
-            kido.deployApp( conf.name, process.cwd(), function ( err ) {
-                    if (err) {
-                        console.error(err.toString());
-                        exit();
-                    }
-
-                    console.info('');
-                    console.info('application deployed successfully!');
-                    console.info('');
+            
+            api.deployApp(conf.credentials, conf.name, process.cwd(), function (err) {
+                if (err) {
+                    showError(err.message || err);
                     exit();
-                });    
+                }
+
+                console.info('');
+                console.info('Application deployed successfully!'.green);
+                console.info('');
+                exit();
+            });       
         });
     });
 
@@ -337,31 +391,37 @@ program
 
 program
     .command('app-run [name] [hosting]')
-    .description('runs files on local folder and redirects calls to backend services')
+    .description('Runs files on local folder and redirects calls to backend services')
     .action(function ( name, hosting ) {
 
-        getAppConfig(name, hosting, function ( err, conf ) {
-            app(conf.credentials)
-                .emulate( conf.name, process.cwd(), function ( err ) {
+        getAppConfig(name, hosting, function (err, conf) {
 
-                    if (err) {
-                        console.error(err);
-                        exit();
-                    }
+            console.info('Running development emulator for app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
 
-                    console.info('');
-                    console.info('you can now open http://localhost:3000 in your browser');
-                    console.info('backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
-                    console.info('');
-                });
+            var api = app(conf.credentials.hosting);        
+
+            api.emulate(conf.credentials, conf.name, process.cwd(), function ( err ) {
+
+                if (err) {
+                    showError(err);
+                    exit();
+                }
+
+                console.info('');
+                console.info('You can now open http://localhost:3000 in your browser');
+                console.info('Backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
+                console.info('');
+            });
         });
     });
+
 
 program
   .command('*')
   .action(function(){
     program.help();
   });
+
 
 program.parse(process.argv);
 
