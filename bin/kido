@@ -423,17 +423,22 @@ program
  * @api public
  */
 program
-    .command('app-crash [iosapp] [name] [hosting]')
-    .description('Sends iOS dSym data to kidozen')
-    .action(function ( iosapp, name, hosting ) {
-            var api = app( { hosting:hosting } );
+    .command('app-crash <iosapp> <name> [hosting]')
+    .description('Search and process the <iosapp> iOS symbols file (dSym) and upload it to the kidozen application specified in <name>')
+    .action(function ( iosapp, name, domain ) {
+            var settings = getCredentials(domain);
+            
+            var api = app( { hosting: settings.hosting } );
+            
+            console.info('Searching ' + iosapp + '.dSym to process and upload.');
+
             api.iOSSymbols(iosapp, name, function(err, result) {
                 if (err) {
                     showError(err);
                     exit();
                 }
                 console.info('');
-                console.info('Done');
+                console.info('The ' + iosapp + '.dSym was uploaded to Kidozen platform.');
                 console.info('');
             });
     });
