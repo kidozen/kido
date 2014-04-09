@@ -418,7 +418,25 @@ program
         });
     });
 
-
+/**
+ * `kido app-crash [iosapp] [name] [hosting] - sends iOS dSym data to kidozen
+ * @api public
+ */
+program
+    .command('app-crash [iosapp] [name] [hosting]')
+    .description('Sends iOS dSym data to kidozen')
+    .action(function ( iosapp, name, hosting ) {
+            var api = app( { hosting:hosting } );
+            api.iOSSymbols(iosapp, name, function(err, result) {
+                if (err) {
+                    showError(err);
+                    exit();
+                }
+                console.info('');
+                console.info('Done');
+                console.info('');
+            });
+    });
 program
   .command('*')
   .action(function(){
