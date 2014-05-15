@@ -424,7 +424,7 @@ program
  */
 program
     .command('app-crash <iosapp> <name> [configuration] [hosting]')
-    .description('Search and process the <iosapp> iOS symbols file (dSym) and upload it to the kidozen application specified in <name>. If [configuration] parameter is not specified it uses "Release-iphoneos"')
+    .description('\nSearches the specified <iosapp> iOS symbols file (dSym) to upload it to Kidozen and associates it to the Kidozen application specified in <name> parameter.\nUse [configuration] parameter to select the XCode "BuildConfiguration/Platform" ( default is Release-iphoneos )')
     .action(function ( iosapp, name, configuration, domain ) {
             var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
