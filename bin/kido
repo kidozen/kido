@@ -423,16 +423,16 @@ program
  * @api public
  */
 program
-    .command('app-crash <iosapp> <name> [hosting]')
-    .description('Search and process the <iosapp> iOS symbols file (dSym) and upload it to the kidozen application specified in <name>')
-    .action(function ( iosapp, name, domain ) {
-            var settings = getCredentials(domain);
-            
+    .command('app-crash <iosapp> <name> [configuration] [hosting]')
+    .description('Search and process the <iosapp> iOS symbols file (dSym) and upload it to the kidozen application specified in <name>. If [configuration] parameter is not specified it uses "Release-iphoneos"')
+    .action(function ( iosapp, name, configuration, domain ) {
+            var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
             
+            configuration = configuration || 'Release-iphoneos'
             console.info('Searching ' + iosapp + '.dSym to process and upload.');
 
-            api.iOSSymbols(settings, iosapp, name, function(err, result) {
+            api.iOSSymbols(settings, iosapp, name, configuration , function(err, result) {
                 if (err) {
                     showError(err);
                     exit();
