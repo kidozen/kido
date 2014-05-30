@@ -423,22 +423,21 @@ program
  * @api public
  */
 program
-    .command('app-crash <iosapp> <name> [configuration] [hosting]')
-    .description('\nSearches the specified <iosapp> iOS symbols file (dSym) to upload it to Kidozen and associates it to the Kidozen application specified in <name> parameter.\nUse [configuration] parameter to select the XCode "BuildConfiguration/Platform" ( default is Release-iphoneos )')
-    .action(function ( iosapp, name, configuration, domain ) {
+    .command('app-crash <dSymPath> <name> [hosting]')
+    .description('\nUpload iOS symbols file (dSym) to Kidozen application specified in <name> parameter.')
+    .action(function ( dSymPath, name, domain ) {
             var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
-            
-            configuration = configuration || 'Release-iphoneos'
-            console.info('Searching ' + iosapp + '.dSym to process and upload.');
 
-            api.iOSSymbols(settings, iosapp, name, configuration , function(err, result) {
+            console.info('Processing .dSym to to upload.');
+
+            api.iOSSymbols(settings, dSymPath, name , function(err, result) {
                 if (err) {
                     showError(err);
                     exit();
                 }
                 console.info('');
-                console.info('The ' + iosapp + '.dSym was uploaded to Kidozen platform.');
+                console.info('The .dSym was uploaded to Kidozen platform.');
                 console.info('');
             });
     });
