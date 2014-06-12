@@ -441,6 +441,33 @@ program
                 console.info('');
             });
     });
+
+/**
+ * `kido apk-crash [iosapp] [name] [appVersion] [appVersionName] [hosting] - sends Android progard file
+ * @api public
+ */
+program
+    .command('apk-crash <mappingPath> <packageName> <appVersion> <appVersionName> <name> [hosting]')
+    .description('\nUpload Android proguard map file with the specified version and version name, to Kidozen application specified in <name> parameter.')
+    .action(function ( mapppingPath, packageName, appVersion, appVersionName, name, domain ) {
+            var settings = getCredentials(domain);            
+            var api = app( { hosting: settings.hosting } );
+
+            console.info('Processing map file to to upload.');
+
+            api.proguardMapping(settings, mapppingPath, packageName, appVersion, appVersionName, name , function(err, result) {
+                if (err) {
+                    showError(err);
+                    exit();
+                }
+                console.info('');
+                console.info('The map file was uploaded to Kidozen platform.');
+                console.info('');
+            });
+    });
+
+
+
 program
   .command('*')
   .action(function(){
