@@ -447,15 +447,15 @@ program
  * @api public
  */
 program
-    .command('apk-crash <mappingPath> <packageName> <appVersion> <appVersionName> <name> [hosting]')
-    .description('\nUpload Android proguard map file with the specified version and version name, to Kidozen application specified in <name> parameter.')
-    .action(function ( mapppingPath, packageName, appVersion, appVersionName, name, domain ) {
+    .command('apk-crash <proguardPath> <packageName> <appVersion> <appVersionName> <name> [hosting]')
+    .description('\nUpload Android proguard information. You must specify the package name, version and version name, to Kidozen application specified in <name> parameter.')
+    .action(function ( proguardPath, packageName, appVersion, appVersionName, name, domain ) {
             var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
 
-            console.info('Processing map file to to upload.');
+            console.info('Processing progard folder to to upload.');
 
-            api.proguardMapping(settings, mapppingPath, packageName, appVersion, appVersionName, name , function(err, result) {
+            api.proguardMapping(settings, proguardPath, packageName, appVersion, appVersionName, name , function(err, result) {
                 if (err) {
                     showError(err);
                     exit();
