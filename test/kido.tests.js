@@ -4,9 +4,9 @@ var fs      = require('fs'),
     request = require('request'),
     assert  = require('assert'),
     nock    = require('nock'),
-    hosting = process.env.KIDOCLI_TESTS_HOSTING,
-    user    = process.env.KIDOCLI_TESTS_USER,
-    pass    = process.env.KIDOCLI_TESTS_PASS;
+    hosting = 'loadtests.qa.kidozen.com', //process.env.KIDOCLI_TESTS_HOSTING,
+    user    = 'loadtests@kidozen.com', //process.env.KIDOCLI_TESTS_USER,
+    pass    = 'pass' //process.env.KIDOCLI_TESTS_PASS;
 
 describe("kido", function () {
 
@@ -283,28 +283,6 @@ describe("kido", function () {
                     assert.ok(apps);
                     assert.ok(Array.isArray(apps));
                     done();
-                });
-            });
-
-            it("should get application details", function ( done ) {
-
-                var api = kido(hosting)
-
-                this.timeout(10000);
-                api.apps(credentials, function ( err, apps ) {
-
-                    assert.ok(!err, err);
-                    assert.ok(apps.length > 0, 'there must be at least one app');
-
-                    var name = apps[0].name;
-                    assert.ok(name);
-
-                    api.app(name, function ( err, app ) {
-                        assert.ok(!err);
-                        assert.ok(app);
-                        assert.equal(name, app.name);
-                        done();
-                    });
                 });
             });
 
