@@ -8,7 +8,9 @@
  var path = require('path'),
  fs   = require('fs'),
  program = require('commander'),
- colors = require('colors');
+ colors = require('colors'),
+ async = require ('async');
+
 
 /**
  * module variables
@@ -164,6 +166,26 @@
     }
 }
 
+function getIpByName(api, ipName, cb) {
+    api.getIdentityProviders(function (err, ipList) {
+        if (err || !ipList) {
+
+            var message = err ? err.message : 'Couldn\'t find any identity provider.';
+
+            cb('Unable to authenticate: ' + message);
+            return;
+        }
+        var matchedIps = ipList.filter(function(ip){
+            return ip.name.toLowerCase() == (ipName || "").toLowerCase();
+        });
+        if (matchedIps.length < 1){
+            return cb("Identity Provider '"+ipName+"' is not available.");
+        }
+        return cb(null, matchedIps[0]);
+    });
+}
+
+
 function chooseIp(api, cb) {
     api.getIdentityProviders(function (err, ipList) {
         if (err || !ipList) {
@@ -217,30 +239,40 @@ function enterCredentials(cb) {
  */
 
  program
- .command('hosting <domain>')
+ .command('hosting <domain> [ipName] [username] [password]')
  .description('Saves the hosting configuration')
- .action(function( domain ) {
+ .action(function( domain, ipName, username, password ) {
 
     var api = app(domain);
 
-    chooseIp(api, function(err, ip) {
-        if (err) { 
-            showError(err); 
-            exit(); 
-        }
-
-        enterCredentials(function(err, credentials) {
-            if (err) { 
-                showError(err); 
-                exit(); 
+    async.waterfall([
+        function(callback){
+            if (!ipName){
+                chooseIp(api, callback);                
+            } else {
+                getIpByName(api,ipName,callback);
             }
-
-            credentials.ip = ip;
-
+        },
+        function(ip, callback){
+            if (!username || !password){
+                enterCredentials(function(err, credentials){
+                    if (err) return callback(err);
+                    credentials.ip = ip;
+                    callback(null, credentials);
+                });
+            } else {
+                var creds = {
+                    username: username,
+                    password: password,
+                    ip: ip
+                };
+                callback(null,creds);
+            }
+        },
+        function(credentials, callback){            
             api.login(credentials, function(err) {
                 if (err) { 
-                    showError(err); 
-                    exit(); 
+                    callback(err);
                 }
 
                 console.info('');
@@ -263,9 +295,14 @@ function enterCredentials(cb) {
                 console.info('Hosting saved in configuration.');
                 console.info('');
 
-                exit();
+                callback(null);
             });
-        })
+        }
+    ], function (err) {
+        if (err) {
+            showError(err.message || err);
+            exit();
+        }  
     });
 });
 
