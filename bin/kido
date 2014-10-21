@@ -293,8 +293,8 @@ function enterCredentials(cb) {
     ], function (err) {
         if (err) {
             logger.logError(err.message || err);
-            exit();
         }  
+        exit();
     });
 });
 
