@@ -9,8 +9,8 @@
  fs   = require('fs'),
  program = require('commander'),
  colors = require('colors'),
- async = require ('async');
-
+ async = require ('async'),
+ logger  = require('../lib/logger');
 
 /**
  * module variables
@@ -92,14 +92,14 @@
     domain = domain || cnf.hosting;
 
     if (!domain) {
-        showError('No hosting selected. use `kido hosting`');
+        logger.logError('No hosting selected. use `kido hosting`');
         exit();
     }
 
     var credentials = cnf.logins[domain];
 
     if (!credentials) {
-        showError('Could not find credentials. use `kido hosting`');
+        logger.logError('Could not find credentials. use `kido hosting`');
         exit();
     }
 
@@ -110,14 +110,6 @@
         ip: credentials.ip
     };
 }
-
-/**
- * Unified error display method.
- **/
- function showError(message) {
-    console.log('Error! '.red + message);
-}
-
 
 /**
  * get's the current folder's application configuration. if no file was found
@@ -276,7 +268,7 @@ function enterCredentials(cb) {
                 }
 
                 console.info('');
-                console.info('Login successfull!'.green);
+                logger.logInfo('Login successfull!'.green);
   
                 //save credentials.
                 var cnf = getConfig();
@@ -292,7 +284,7 @@ function enterCredentials(cb) {
                 setConfig(cnf);
 
                 console.info('');
-                console.info('Hosting saved in configuration.');
+                logger.logInfo('Hosting saved in configuration.');
                 console.info('');
 
                 callback(null);
@@ -300,7 +292,7 @@ function enterCredentials(cb) {
         }
     ], function (err) {
         if (err) {
-            showError(err.message || err);
+            logger.logError(err.message || err);
             exit();
         }  
     });
@@ -320,13 +312,13 @@ program
 
         var credentials = getCredentials(domain);
 
-        console.info('Getting list of apps from: ', credentials.hosting);
+        logger.logInfo('Getting list of apps from: ', credentials.hosting);
 
         var api = app(credentials.hosting);
 
         api.apps(credentials, function ( err, apps ) {
             if (err) {
-                showError(err.message || err);
+                logger.logError(err.message || err);
                 exit();
             }
 
@@ -350,19 +342,19 @@ program
 
         var credentials = getCredentials(hosting);
 
-        console.info('Creating app ', name.cyan, ' in ', credentials.hosting.cyan);
+        logger.logInfo('Creating app ', name.cyan, ' in ', credentials.hosting.cyan);
 
         var api = app(credentials.hosting);
 
         api.createApp(credentials, name, function (err) {
 
                 if (err) {
-                    showError(err.message || err);
+                    logger.logError(err.message || err);
                     exit();
                 }
 
                 console.info('');
-                console.info('Application successfully created!'.green);
+                logger.logInfo('Application successfully created!'.green);
                 console.info('');
 
                 program.prompt('Save app configuration to current folder? ', function ( yes ) {
@@ -393,7 +385,7 @@ program
 
         getAppConfig(name, hosting, function(err, conf) {
 
-            console.info('Deploying current folder to app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
+            logger.logInfo('Deploying current folder to app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
 
             var options = { hosting: conf.credentials.hosting };
             
@@ -405,17 +397,17 @@ program
             var api = app(options);
             
             api.on('skipped', function (item) {
-                console.info("Skipping file: " + item);
+                logger.logInfo("Skipping file: " + item);
             });
             
             api.deployApp(conf.credentials, conf.name, process.cwd(), function (err) {
                 if (err) {
-                    showError(err.message || err);
+                    logger.logError(err.message || err);
                     exit();
                 }
 
                 console.info('');
-                console.info('Application deployed successfully!'.green);
+                logger.logInfo('Application deployed successfully!'.green);
                 console.info('');
                 exit();
             });       
@@ -436,20 +428,20 @@ program
 
         getAppConfig(name, hosting, function (err, conf) {
 
-            console.info('Running development emulator for app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
+            logger.logInfo('Running development emulator for app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
 
             var api = app(conf.credentials.hosting);        
 
             api.emulate(conf.credentials, conf.name, process.cwd(), function ( err ) {
 
                 if (err) {
-                    showError(err);
+                    logger.logError(err);
                     exit();
                 }
 
                 console.info('');
-                console.info('You can now open http://localhost:3000 in your browser');
-                console.info('Backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
+                logger.logInfo('You can now open http://localhost:3000 in your browser');
+                logger.logInfo('Backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
                 console.info('');
             });
         });
@@ -466,15 +458,15 @@ program
             var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
 
-            console.info('Processing .dSym to to upload.');
+            logger.logInfo('Processing .dSym to to upload.');
 
             api.iOSSymbols(settings, dSymPath, name , function(err, result) {
                 if (err) {
-                    showError(err);
+                    logger.logError(err);
                     exit();
                 }
                 console.info('');
-                console.info('The .dSym was uploaded to Kidozen platform.');
+                logger.logInfo('The .dSym was uploaded to Kidozen platform.');
                 console.info('');
             });
     });
@@ -490,15 +482,15 @@ program
             var settings = getCredentials(domain);            
             var api = app( { hosting: settings.hosting } );
 
-            console.info('Processing progard folder to to upload.');
+            logger.logInfo('Processing progard folder to to upload.');
 
             api.proguardMapping(settings, proguardPath, packageName, appVersion, appVersionName, name , function(err, result) {
                 if (err) {
-                    showError(err);
+                    logger.logError(err);
                     exit();
                 }
                 console.info('');
-                console.info('The map file was uploaded to Kidozen platform.');
+                logger.logInfo('The map file was uploaded to Kidozen platform.');
                 console.info('');
             });
     });
