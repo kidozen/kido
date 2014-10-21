@@ -9,8 +9,9 @@
  fs   = require('fs'),
  program = require('commander'),
  colors = require('colors'),
- async = require ('async'),
- logger  = require('../lib/logger');
+ async = require ('async');
+
+
 
 /**
  * module variables
@@ -18,6 +19,7 @@
 
  var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib'),
  app  = require(lib),
+ logger  = require(lib+'/logger'),
  home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
  configFile = path.join(home, 'kido.config');
 
