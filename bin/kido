@@ -497,17 +497,19 @@ program
  */
 
 program
-    .command('app-run [name] [hosting]')
-    .description('Runs files on local folder and redirects calls to backend services')
-    .action(function ( name, hosting ) {
+    .command('app-run [name] [hosting] [port]')
+    .description('Runs files on local folder and redirects calls to backend services.')
+    .action(function ( name, hosting, port ) {
+
+        port = port || 3000;
 
         getAppConfig(name, hosting, function (err, conf) {
 
-            logger.logInfo('Running development emulator for app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan);
+            logger.logInfo('Running development emulator for app ', conf.name.cyan, ' in ', conf.credentials.hosting.cyan, 'and port',port);
 
             var api = app(conf.credentials.hosting);        
 
-            api.emulate(conf.credentials, conf.name, process.cwd(), function ( err ) {
+            api.emulate(conf.credentials, conf.name, process.cwd(), port, function ( err ) {
 
                 if (err) {
                     logger.logError(err);
@@ -515,7 +517,7 @@ program
                 }
 
                 console.info('');
-                logger.logInfo('You can now open http://localhost:3000 in your browser');
+                logger.logInfo('You can now open http://localhost:'+port+' in your browser');
                 logger.logInfo('Backend calls are being directed to https://' + conf.name + '.' + conf.credentials.hosting);
                 console.info('');
             });
