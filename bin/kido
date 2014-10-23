@@ -348,7 +348,7 @@ program
 
         var api = app(credentials.hosting);
 
-        api.createApp(credentials, name, function (err) {
+        api.createApp(credentials, name, function (err,appId) {
 
                 if (err) {
                     logger.logError(err.message || err);
@@ -356,7 +356,7 @@ program
                 }
 
                 console.info('');
-                logger.logInfo('Application successfully created!'.green);
+                logger.logInfo('Application successfully created!'.green,"AppId:",appId);
                 console.info('');
 
                 program.prompt('Save app configuration to current folder? ', function ( yes ) {
@@ -368,6 +368,79 @@ program
                     exit();
                 });
             });
+    });
+
+/**
+ * `kido app-category-create <name> [hosting] - creates an app category with the provided name
+ * in the specified hosting (or the default one).
+ * @api public
+ */
+
+program
+    .command('app-category-create <name> [hosting]')
+    .description('Creates an app category with <name> in the [hosting]')
+    .action(function (name, hosting) {
+
+        var credentials = getCredentials(hosting);
+
+        logger.logInfo('Creating app category', name.cyan, ' in ', credentials.hosting.cyan);
+
+        var api = app(credentials.hosting);
+
+        api.createAppCategory(credentials, name, function (err) {
+
+            if (err) {
+                logger.logError(err.message || err);
+                exit();
+            }
+
+            console.info('');
+            logger.logInfo('App category successfully created!'.green);
+            console.info('');
+
+            exit();
+        });
+    });
+
+/**
+ * `kido app-update  <appId> <appDetailsPath> [hosting] - update app details from json file
+ * in the specified hosting (or the default one).
+ * @api public
+ */
+program
+    .command('app-update <appId> <appDetailsPath> [hosting]')
+    .description('Updates an app with <appId> in the [hosting] taking the data from a json file located in appDetailsPath.')
+    .action(function (appId, appDetailsPath, hosting) {
+        if (!fs.existsSync(appDetailsPath)) {
+            logger.logError("appDetailsPath '"+ appDetailsPath+"' does not exist.");
+            exit();
+        }
+        var appDetailsJson;
+        try {
+            appDetailsJson = JSON.parse(fs.readFileSync(appDetailsPath, 'utf8'));
+        } catch (e){
+            logger.logError("Error loading app details from '"+appDetailsPath+"': "+ e);
+            exit();
+        }
+        var credentials = getCredentials(hosting);
+
+        logger.logInfo('Updating app ', appId.cyan, ' in ', credentials.hosting.cyan);
+
+        var api = app(credentials.hosting);
+
+        api.updateApp(credentials, appId, appDetailsJson, function (err) {
+
+            if (err) {
+                logger.logError(err.message || err);
+                exit();
+            }
+
+            console.info('');
+            logger.logInfo('Application successfully updated!'.green);
+            console.info('');
+
+            exit();
+        });
     });
 
 
@@ -496,7 +569,6 @@ program
                 console.info('');
             });
     });
-
 
 
 program
